@@ -1,5 +1,6 @@
 use std::pin::Pin;
 
+use my_telemetry::MyTelemetryContext;
 use rust_extensions::date_time::DateTimeAsMicroseconds;
 
 use crate::{
@@ -24,9 +25,21 @@ impl TransactionHistoryIntegrationGrpcService for GrpcService {
 
     async fn get_transaction_history(
         &self,
-        _: tonic::Request<GetTransactionHistoryGrpc>,
+        request: tonic::Request<GetTransactionHistoryGrpc>,
     ) -> Result<tonic::Response<Self::GetTransactionHistoryStream>, tonic::Status> {
-        return my_grpc_extensions::grpc_server::send_vec_to_stream(vec![], |itm| itm).await;
+        let request = request.into_inner();
+        let history = self
+            .app
+            .report_grpc
+            .get_in_date_range(
+                &request.account_id,
+                request.date_from_unix_ms,
+                request.date_to_unix_ms,
+                &MyTelemetryContext::new(),
+            )
+            .await;
+        return my_grpc_extensions::grpc_server::send_vec_to_stream(history, |itm| itm.into())
+            .await;
     }
     async fn ping(
         &self,

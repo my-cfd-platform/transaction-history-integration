@@ -1,0 +1,51 @@
+
+syntax = "proto3";
+package report_grpc;
+
+enum ReportTransactionType{
+    Deposit = 0;
+    Withdrawal = 1;
+    BalanceCorrection = 2;
+    Trading = 3;
+}
+
+message ReportOperationsHistoryGrpcRequest{
+    string AccountId = 1;
+    int32 Page = 2;
+    int32 Size = 3;
+}
+
+message ReportOperationsHistoryInDateRangeGrpcRequest{
+    string AccountId = 1;
+    optional uint64 DateFrom = 2;
+    optional uint64 DateTo = 3;
+}
+
+message ReportOperationsHistoryGrpcResponse{
+    int32 Page = 1;
+    int32 Size = 2;
+    uint64 TotalItems = 3;
+    repeated ReportOperationsHistoryGrpcResponseHistoryItem History = 5;
+}
+
+message ReportOperationsHistoryGrpcResponseHistoryItem{
+    double Amount = 1;
+    double BalanceAfterOperation = 2;
+    string Description = 3;
+    uint64 CreatedAt = 4;
+}
+
+message ReportOperationsHistoryInDateRangeGrpcResponseHistoryItem{
+    string Id = 1;
+    string TraderId = 2;
+    string AccountId = 3;
+    ReportTransactionType TransactionType = 4;
+    uint64 DateTimeUnixMicros = 5;
+    double Delta = 6;
+}
+
+
+service ReportGrpcService {
+    rpc GetHistory(ReportOperationsHistoryGrpcRequest) returns (ReportOperationsHistoryGrpcResponse);
+    rpc GetHistoryInDateRange(ReportOperationsHistoryInDateRangeGrpcRequest) returns (stream ReportOperationsHistoryInDateRangeGrpcResponseHistoryItem);
+}
