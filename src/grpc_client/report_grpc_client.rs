@@ -5,9 +5,7 @@ use my_telemetry::MyTelemetryContext;
 use tonic::{codegen::InterceptedService, transport::Channel};
 
 use crate::report_grpc::{
-    report_grpc_service_client::ReportGrpcServiceClient,
-    ReportOperationsHistoryInDateRangeGrpcRequest,
-    ReportOperationsHistoryInDateRangeGrpcResponseHistoryItem,
+    report_grpc_service_client::ReportGrpcServiceClient, ReportOperationHistoryItem, ReportFlowsOperationsGetInDateRangeGrpcRequest,
 };
 
 pub const TRANSACTION_GRPC_SERVICE_NAME: &str = "transaction_history_integration";
@@ -55,26 +53,24 @@ impl ReportGrpcClient {
         from: Option<u64>,
         to: Option<u64>,
         ctx: &MyTelemetryContext,
-    ) -> Vec<ReportOperationsHistoryInDateRangeGrpcResponseHistoryItem> {
+    ) -> Vec<ReportOperationHistoryItem> {
         let mut grpc_client = self.create_grpc_service(ctx).await;
 
-        let request = ReportOperationsHistoryInDateRangeGrpcRequest {
+        let request = ReportFlowsOperationsGetInDateRangeGrpcRequest {
             account_id: account_id.to_string(),
             date_from: from,
             date_to: to,
         };
 
         let result = grpc_client
-            .get_history_in_date_range(request)
+            .get_operations_history_in_date_range(request)
             .await
-            .unwrap();
+            .unwrap()
+            .into_inner();
 
-        return my_grpc_extensions::read_grpc_stream::as_vec(
-            result.into_inner(),
-            Duration::from_secs(10),
-        )
-        .await
-        .unwrap()
-        .unwrap();
+        return my_grpc_extensions::read_grpc_stream::as_vec(result, Duration::from_secs(20))
+            .await
+            .unwrap()
+            .unwrap();
     }
 }
