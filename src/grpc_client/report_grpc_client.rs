@@ -68,9 +68,13 @@ impl ReportGrpcClient {
             .unwrap()
             .into_inner();
 
-        return my_grpc_extensions::read_grpc_stream::as_vec(result, Duration::from_secs(20))
-            .await
-            .unwrap()
-            .unwrap();
+        let result = my_grpc_extensions::read_grpc_stream::as_vec(result, Duration::from_secs(20))
+        .await
+        .unwrap();
+
+        return match result{
+            Some(src) => src,
+            None => vec![],
+        }
     }
 }
